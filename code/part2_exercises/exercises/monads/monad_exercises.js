@@ -2,6 +2,9 @@ require('../../support');
 var Task = require('data.task');
 var _ = require('ramda');
 
+var path = require('path');
+
+
 // Exercise 1
 // ==========
 // Use safeProp and map/join or chain to safely get the street name when given a user
@@ -18,7 +21,12 @@ var user = {
   }
 };
 
-var ex1 = undefined;
+//  ex1 :: User -> Maybe String
+var ex1 = _.compose(
+  chain(safeProp('name')),
+  chain(safeProp('street')),
+  safeProp('address')
+);
 
 
 // Exercise 2
@@ -27,17 +35,27 @@ var ex1 = undefined;
 
 var getFile = function() {
   return new IO(function(){ return __filename; });
-}
+};
 
 var pureLog = function(x) {
   return new IO(function(){
     console.log(x);
     return 'logged ' + x; // for testing w/o mocks
   });
-}
+};
 
-var ex2 = undefined;
+//  dirname :: String -> String
+var dirname = _.compose(
+  _.last,
+  _.split(path.sep)
+);
 
+//  ex2 :: Undefined -> IO String
+var ex2 = _.compose(
+  chain(pureLog),
+  map(dirname),
+  getFile
+);
 
 
 // Exercise 3
@@ -50,7 +68,7 @@ var getPost = function(i) {
       res({ id: i, title: 'Love them tasks' }); // THE POST
     }, 300);
   });
-}
+};
 
 var getComments = function(i) {
   return new Task(function (rej, res) {
@@ -58,9 +76,14 @@ var getComments = function(i) {
       res([{post_id: i, body: "This book should be illegal"}, {post_id: i, body:"Monads are like smelly shallots"}]);
     }, 300);
   });
-}
+};
 
-var ex3 = undefined;
+//  ex3 :: Number -> Task [Comment]
+var ex3 = _.compose(
+  _.chain(getComments),
+  _.map(_.prop('id')),
+  getPost
+);
 
 
 // Exercise 4
@@ -75,7 +98,7 @@ var addToMailingList = (function(list){
       list.push(email);
       return list;
     });
-  }
+  };
 })([]);
 
 //  emailBlast :: [Email] -> IO String
@@ -88,10 +111,16 @@ function emailBlast(list) {
 //  validateEmail :: Email -> Either String Email
 var validateEmail = function(x){
   return x.match(/\S+@\S+\.\S+/) ? (new Right(x)) : (new Left('invalid email'));
-}
+};
 
 //  ex4 :: Email -> Either String (IO String)
-var ex4 = undefined;
+var ex4 = _.compose(
+  _.map(_.compose(
+    _.chain(emailBlast),
+    addToMailingList
+  )),
+  validateEmail
+);
 
 
-module.exports = {ex1: ex1, ex2: ex2, ex3: ex3, ex4: ex4, user: user}
+module.exports = {ex1: ex1, ex2: ex2, ex3: ex3, ex4: ex4, user: user};
